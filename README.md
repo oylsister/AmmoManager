@@ -1,3 +1,5 @@
+**AmmoManager**
+
 Assign custom bullet number for each weapon in CS2.
 
 ```jsonc
