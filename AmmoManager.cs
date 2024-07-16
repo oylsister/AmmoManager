@@ -1,12 +1,14 @@
 ﻿using CounterStrikeSharp.API;
 using CounterStrikeSharp.API.Core;
+using CounterStrikeSharp.API.Core.Hosting;
+using CounterStrikeSharp.API.Modules.Commands;
 using CounterStrikeSharp.API.Modules.Entities.Constants;
 using Newtonsoft.Json;
 
 namespace AmmoManager
 {
     public class AmmoManager : BasePlugin
-    {
+    {   
         public override string ModuleName => "AmmoManager";
         public override string ModuleAuthor => "Oylsister";
         public override string ModuleVersion => "1.0";
@@ -15,20 +17,35 @@ namespace AmmoManager
 
         public override void Load(bool hotReload)
         {
-            var configPath = Path.Combine(ModuleDirectory, "ammosetting.json");
+            var configPath = Path.Combine(ModuleDirectory, "ammosetting.jsonc");
             AmmoSetting = JsonConvert.DeserializeObject<Dictionary<string, AmmoSetting>>(File.ReadAllText(configPath))!;
 
             RegisterListener<Listeners.OnEntityCreated>(OnAnyEntityCreated);
+
+            AddCommand("css_ammolist", "Ammo List", CommandAmmoList);
+        }
+
+        public void CommandAmmoList(CCSPlayerController? client, CommandInfo info)
+        {
+            foreach (var ammo in AmmoSetting)
+            {
+                info.ReplyToCommand($"{ammo.Key}: {ammo.Value.ClipSize} | {ammo.Value.ReserveAmmo}");
+            }
         }
 
         public void OnAnyEntityCreated(CEntityInstance entity)
         {
+            //Server.PrintToChatAll($"Found {entity.DesignerName}");
             if (!entity.DesignerName.Contains("weapon_"))
             {
                 return;
             }
 
-            ApplyNewAmmo(entity);
+            Server.NextFrame(() =>
+            {
+                //Server.PrintToChatAll($"Apply {entity.DesignerName} here.");
+                ApplyNewAmmo(entity);
+            });
         }
 
         private void ApplyNewAmmo(CEntityInstance entity)
@@ -36,8 +53,12 @@ namespace AmmoManager
             CBasePlayerWeapon weapon = new CBasePlayerWeapon(entity.Handle);
             var weaponname = FindWeaponItemDefinition(weapon, weapon.DesignerName);
 
+            //Server.PrintToChatAll($"Get ItemDef for {weaponname} here.");
+
             if (AmmoSetting.ContainsKey(weaponname))
             {
+                //Server.PrintToChatAll($"Done for {entity.DesignerName} here.");
+
                 var clip = AmmoSetting[weaponname].ClipSize;
                 var reserved = AmmoSetting[weaponname].ReserveAmmo;
 

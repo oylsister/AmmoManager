@@ -1,0 +1,7 @@
+{
+    // 
+    "weapon_glock": {
+        "clip": 40,
+        "reserved": 2000
+    }
+}
